@@ -1,0 +1,19 @@
+🟢 Opção 1: O "Dedo-Duro" (Histórico de Auditoria)
+O que faremos: Vamos fazer o sistema "lembrar" quem fez o login. Quando o Ruan, o Renato ou o Otniel dispararem uma cobrança ou gerarem um alerta no Whats, o sistema vai gravar o nome deles no banco de dados. Na tela de detalhes da nota, vai aparecer: "Cobrado por: Otniel em 15/04/2026".
+Nível de dificuldade: Fácil.
+
+🟡 Opção 2: O Dashboard Neon (Gráficos)
+O que faremos: Vamos plugar a biblioteca Chart.js no nosso HTML. Ao lado da tabela (ou em cima dela), vamos colocar dois gráficos estilosos que se atualizam sozinhos: um mostrando o Volume Financeiro por Empresa e outro mostrando as notas Por Faixa de Atraso (Lembrete, Urgente, Crítico).
+Nível de dificuldade: Médio (muito visual, a tela vai ficar maravilhosa).
+
+🟠 Opção 3: Painel de Administração de Usuários
+O que faremos: Uma tela nova (ou um pop-up) onde um usuário "Admin" 
+consegue cadastrar gente nova, trocar senhas e editar os números de telefone da operação sem 
+precisar de você mexendo no código do banco.
+Nível de dificuldade: Médio (envolve criar algumas funções novas no Python e no JS).
+
+🔴 Opção 4: E-mails Dinâmicos (Templates)
+O que faremos: Tirar aqueles textos gigantes do main.py e criar uma tabela no banco para eles. 
+O Renato da licitação vai poder entrar no sistema, clicar em "Editar Textos" e mudar a mensagem judicial
+dele na hora que quiser.
+Nível de dificuldade: Um pouco mais complexo, mas é o que vai dar total autonomia pra eles no futuro.

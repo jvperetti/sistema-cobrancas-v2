@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão Financeira - Cobranças</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="logo.ico">
+    
+    <script type="text/javascript" src="/eel.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="d-flex flex-column vh-100 p-4">
+    <canvas id="bgCanvas"></canvas>
+
+    <header class="d-flex align-items-center mb-4 pb-3 border-bottom border-secondary fade-in">
+        <button class="btn btn-outline-light me-4" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+            <span class="fs-5">☰ Menu</span>
+        </button>
+        <img src="logo.png" alt="Logo" class="logo-neon me-3" style="height: 50px;">
+        <h2 class="fw-bold m-0 text-white">Sistema de Cobranças <span style="color: #00E5FF;">Nascimento</span></h2>
+    </header>
+
+    <div id="tela-dashboard" class="d-flex flex-column flex-grow-1 fade-in">
+        
+        <div class="row mb-3">
+            <div class="col-md-6 mb-2">
+                <div class="card custom-card p-3 h-100 d-flex flex-column justify-content-center align-items-center" style="box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);">
+                    <h5 class="fw-bold text-white mb-1">Total Geral em Aberto</h5>
+                    <h2 class="fw-bold m-0" style="color: #00E5FF;" id="dash-total-geral">R$ 0,00</h2>
+                </div>
+            </div>
+            <div class="col-md-6 mb-2">
+                <div class="card custom-card p-3 h-100 d-flex flex-column justify-content-center align-items-center" style="box-shadow: 0 0 15px rgba(255, 23, 68, 0.2);">
+                    <h5 class="fw-bold text-white mb-1">Total em Atraso (30+ Dias)</h5>
+                    <h2 class="fw-bold m-0" style="color: #FF1744;" id="dash-total-atraso">R$ 0,00</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mb-2 pe-2">
+            <button class="btn btn-outline-secondary fw-bold btn-sm px-4 me-3" onclick="limparFiltros()" style="border-color: rgba(255,255,255,0.2); color: #aaa;">
+                🧹 Limpar Filtros
+            </button>
+
+            <button id="btn-toggle-graficos" class="btn btn-outline-info fw-bold btn-sm px-4" onclick="alternarModoGrafico()" style="box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);">
+                📄 Ver por Qtd. de Notas
+            </button>
+        </div>
+
+        <div class="row mb-3 h-100" id="dashboard-graficos">
+            <div class="col-md-6 mb-2">
+                <div class="card custom-card p-3 h-100 d-flex flex-column justify-content-center align-items-center" style="box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);">
+                    <canvas id="graficoEmpresa" style="width: 100%; max-height: 400px;"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6 mb-2">
+                <div class="card custom-card p-3 h-100 d-flex flex-column justify-content-center align-items-center" style="box-shadow: 0 0 15px rgba(255, 102, 0, 0.2);">
+                    <canvas id="graficoStatus" style="width: 100%; max-height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="tela-cobrancas" class="d-flex flex-column flex-grow-1 fade-in" style="display: none !important;">
+        
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-7 d-flex align-items-center gap-3">
+                <div class="card custom-card p-2 px-3 d-flex flex-row align-items-center gap-2">
+                    <label class="fw-bold text-white">Busca:</label>
+                    <input type="text" id="filtro-busca" class="form-control custom-input border-0" placeholder="Cliente ou Nota">
+                </div>
+                <div class="card custom-card p-2 px-3 d-flex flex-row align-items-center gap-2">
+                    <label class="fw-bold text-white">Empresa:</label>
+                    <select id="filtro-empresa" class="form-select custom-input border-0">
+                        <option value="TODAS">TODAS</option>
+                        <option value="HAGG">HAGG</option>
+                        <option value="SN">SN</option>
+                        <option value="NH">NH</option>
+                        <option value="CANAA">CANAÃ</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-5 text-end">
+                <h4 class="fw-bold m-0" style="color: #00E5FF;" id="lbl-total-geral">Total Geral: R$ 0,00</h4>
+                <h5 class="fw-bold m-0 text-danger" id="lbl-total-atraso">Total Atraso (30+): R$ 0,00</h5>
+            </div>
+        </div>
+
+        <div class="card custom-card flex-grow-1 overflow-auto mb-3 px-3 py-2">
+            <table class="table table-custom table-hover align-middle mb-0 text-center">
+                <thead class="sticky-top" style="background-color: var(--cor-card);">
+                    <tr>
+                        <th width="4%">☐</th>
+                        <th>EMISSÃO</th>
+                        <th>Nº NOTA</th>
+                        <th>CLIENTE</th>
+                        <th>EMPRESA</th>
+                        <th>VALOR</th>
+                        <th>TOTAL CONTRATO</th>
+                        <th>DIAS</th>
+                        <th>TIPO DE COBRANÇA</th>
+                        <th>ÚLTIMO E-MAIL</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela"></tbody>
+            </table>
+        </div>
+
+        <div class="card custom-card p-3 fade-in sticky-painel mb-2">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-bold text-white text-nowrap">✉️ Outlook:</span>
+                    <select id="combo-email" class="form-select custom-input form-select-sm" style="width: 220px;"></select>
+                    
+                    <button class="btn btn-action-custom fw-bold text-nowrap px-4" onclick="iniciarEnvio()">
+                        GERAR E-MAIL
+                    </button>
+
+                    <button class="btn btn-success fw-bold text-nowrap px-4 ms-2" style="box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);" onclick="prepararAlertaWhats()">
+                        💬 ALERTA WHATSAPP
+                    </button>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-outline-info fw-bold text-nowrap px-4" onclick="exportarExcel()">
+                        📊 EXPORTAR RELATÓRIO
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div> 
+
+    <div id="tela-admin" class="d-flex flex-column flex-grow-1 fade-in" style="display: none !important;">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-8">
+                <h3 class="fw-bold text-warning m-0">⚙️ Gestão de Usuários</h3>
+                <p class="text-white-50 m-0">Cadastre a equipe e gerencie os contatos para o WhatsApp.</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-success fw-bold px-4" onclick="abrirModalUsuario()">➕ NOVO USUÁRIO</button>
+            </div>
+        </div>
+        
+        <div class="card custom-card flex-grow-1 overflow-auto p-0">
+            <table class="table table-custom table-hover align-middle mb-0 text-center">
+                <thead class="sticky-top" style="background-color: var(--cor-card);">
+                    <tr>
+                        <th>NOME DE USUÁRIO</th>
+                        <th>FUNÇÃO/SETOR</th>
+                        <th>Nº WHATSAPP</th>
+                        <th>AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela-usuarios"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tela-templates" class="d-flex flex-column flex-grow-1 fade-in" style="display: none !important;">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-8">
+                <h3 class="fw-bold text-success m-0">📝 Modelos de Mensagens</h3>
+                <p class="text-white-50 m-0">Edite os textos das notificações de E-mail e WhatsApp do sistema.</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-success fw-bold px-4" onclick="abrirModalTemplate('', '', '', '')">➕ NOVO MODELO</button>
+            </div>
+        </div>
+
+        <div class="card custom-card flex-grow-1 overflow-auto p-0">
+            <table class="table table-custom table-hover align-middle mb-0 text-center">
+                <thead class="sticky-top" style="background-color: var(--cor-card);">
+                    <tr>
+                        <th class="text-start ps-4">NOME DO MODELO (SISTEMA)</th>
+                        <th>ASSUNTO PADRÃO</th>
+                        <th>AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela-templates"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal90Dias" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-card border-0 text-light text-center p-4">
+                <h5 class="fw-bold mb-4">Cobrança Faixa Roxa Detectada</h5>
+                <p class="text-white-50 mb-4">Qual documento você deseja gerar para esta seleção?</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-danger fw-bold px-4" onclick="confirmarEnvio90Dias('1')">GERAR MINUTA JURÍDICA</button>
+                    <button type="button" class="btn btn-warning fw-bold px-4 text-dark" onclick="confirmarEnvio90Dias('2')">GERAR PARECER PREVENTIVO</button>
+                </div>
+                <button type="button" class="btn btn-secondary mt-4 w-100 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalTimeline" tabindex="-1" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content custom-card border-0 text-light">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title fw-bold" style="color: #00E5FF;">📜 Histórico de Cobranças</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body fs-6">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <h5 id="timeline-cliente" class="text-warning m-0 fw-bold"></h5>
+                        <button id="btn-dossie" class="btn btn-warning fw-bold text-dark px-4" style="box-shadow: 0 0 10px rgba(255, 152, 0, 0.4);">
+                            📦 BAIXAR DOSSIÊ (ZIP)
+                        </button>
+                    </div>
+                    <div id="corpo-timeline" style="max-height: 400px; overflow-y: auto;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalDetalhes" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content custom-card border-0 text-light">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title fw-bold" style="color: #FF9800;">📄 Detalhes da Cobrança</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body fs-6" id="corpo-detalhes">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalUsuario" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-card border-0 text-light">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title fw-bold" style="color: #00E5FF;" id="tituloModalUsuario">👤 Novo Usuário</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-user-id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Login do Usuário</label>
+                        <input type="text" id="edit-user-nome" class="form-control custom-input text-white" placeholder="Ex: Ruan">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Senha <span id="hint-senha" class="text-warning" style="font-size: 0.8em;">(Obrigatória)</span></label>
+                        <input type="password" id="edit-user-senha" class="form-control custom-input text-white" placeholder="Digite a senha">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Função / Setor</label>
+                        <input type="text" id="edit-user-funcao" class="form-control custom-input text-white" placeholder="Ex: Financeiro">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Nº WhatsApp (Somente números)</label>
+                        <input type="text" id="edit-user-tel" class="form-control custom-input text-white" placeholder="Ex: 5551999999999">
+                        <small class="text-white-50">Isso fará o contato aparecer na tela de disparo de mensagens!</small>
+                    </div>
+                    
+                    <button class="btn btn-info w-100 fw-bold text-dark" onclick="salvarUsuario()">💾 SALVAR DADOS</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalTemplate" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content custom-card border-0 text-light">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title fw-bold" style="color: #00E676;" id="titulo-modal-temp">📝 Editar Modelo</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-temp-id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do Modelo (Status/Faixa)</label>
+                        <select class="form-select bg-dark text-light border-secondary" id="edit-temp-nome">
+                            <option value="">-- Selecione o Tipo de Cobrança --</option>
+                            <option value="AVISO AMIGÁVEL (PRÉ-VENCIMENTO)">AVISO AMIGÁVEL (PRÉ-VENCIMENTO)</option>
+                            <option value="FAIXA VERDE (ATÉ 15 DIAS)">FAIXA VERDE (ATÉ 15 DIAS)</option>
+                            <option value="FAIXA AMARELA (16 A 30 DIAS)">FAIXA AMARELA (16 A 30 DIAS)</option>
+    
+                            <option value="FAIXA LARANJA - ANEXO I (ADMINISTRATIVO)">FAIXA LARANJA - ANEXO I (ADMINISTRATIVO)</option>
+                            <option value="FAIXA LARANJA - ANEXO II (JURÍDICO)">FAIXA LARANJA - ANEXO II (JURÍDICO)</option>
+    
+                            <option value="FAIXA VERMELHA - ANEXO III (ADMINISTRATIVO)">FAIXA VERMELHA - ANEXO III (ADMINISTRATIVO)</option>
+                            <option value="FAIXA VERMELHA - ANEXO IV (JURÍDICO)">FAIXA VERMELHA - ANEXO IV (JURÍDICO)</option>
+    
+                            <option value="FAIXA ROXA - MINUTA JURÍDICO (91 A 120 DIAS)">FAIXA ROXA - MINUTA JURÍDICO (91 A 120 DIAS)</option>
+                            <option value="FAIXA ROXA - PARECER PREVENTIVO (91 A 120 DIAS)">FAIXA ROXA - PARECER PREVENTIVO (91 A 120 DIAS)</option>
+    
+                            <option value="FAIXA PRETA (+120 DIAS)">FAIXA PRETA (+120 DIAS)</option>
+                            <option value="WHATSAPP - MENSAGEM PADRÃO">WHATSAPP - MENSAGEM PADRÃO</option>
+                        </select>
+                        <small class="text-white-50" style="font-size: 0.85em;">Selecione a faixa exata que este e-mail irá disparar.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Assunto do E-mail</label>
+                        <input type="text" id="edit-temp-assunto" class="form-control custom-input text-white">
+                        <small class="text-white-50">Dica: Use <b>{cliente}</b> para o nome do cliente aparecer aqui.</small>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-info">Nome do Anexo (Opcional)</label>
+                            <select id="edit-temp-anexo" class="form-select custom-input text-white">
+                                <option value="" selected>-- Nenhum --</option>
+                                <option value="ANEXO 1">ANEXO 1</option>
+                                <option value="ANEXO 2">ANEXO 2</option>
+                                <option value="ANEXO 3">ANEXO 3</option>
+                                <option value="ANEXO 4">ANEXO 4</option>
+                                <option value="ANEXO 5">ANEXO 5</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-info">Setor Responsável (Opcional)</label>
+                            <select id="edit-temp-responsavel" class="form-select custom-input text-white">
+                                <option value="" selected>-- Nenhum --</option>
+                                <option value="FINANCEIRO (RUAN)">FINANCEIRO (RUAN)</option>
+                                <option value="LICITAÇÃO (OTINIEL/RENATO)">LICITAÇÃO (OTINIEL/RENATO)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Corpo da Mensagem (HTML)</label>
+                        <textarea id="edit-temp-corpo" class="form-control custom-input text-white" rows="12" style="font-family: 'Consolas', monospace; font-size: 0.9em;"></textarea>
+                        
+                        <div class="mt-3 p-3 rounded" style="background-color: rgba(0, 229, 255, 0.05); border: 1px dashed #00E5FF;">
+                            <h6 class="fw-bold mb-3" style="color: #00E5FF;">💡 Guia de Variáveis Mágicas <span class="text-white-50 fw-normal" style="font-size: 0.8em;">(Clique nas caixinhas para inserir no texto)</span></h6>
+                            
+                            <div class="row" style="font-size: 0.85em;">
+                                <div class="col-md-6 mb-3">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{cliente}')">{cliente}</span><br>
+                                    <span class="text-white-50">Nome do Contrato (Ex: CANAÃ)</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{ass_emp}')">{ass_emp}</span><br>
+                                    <span class="text-white-50">Razão Social da Nascimento</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{valor_total}')">{valor_total}</span><br>
+                                    <span class="text-white-50">Valor total da cobrança em Reais</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{lista_html}')">{lista_html}</span><br>
+                                    <span class="text-white-50">Cria a listinha com as Notas e Valores</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{dias_max}')">{dias_max}</span><br>
+                                    <span class="text-white-50">Dias de atraso (Ex: 62)</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{data_lim}')">{data_lim}</span><br>
+                                    <span class="text-white-50">Data limite gerada hoje (+ 5 dias)</span>
+                                </div>
+
+                                <div class="col-12 mt-2 mb-2 border-top border-secondary pt-2">
+                                    <span class="text-warning fw-bold" style="font-size: 0.9em;">Variáveis de Plural/Singular (Se ajustam sozinhas dependendo da quantidade de notas):</span>
+                                </div>
+                                
+                                <div class="col-md-6 mb-2">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{t_nota}')">{t_nota}</span><br>
+                                    <span class="text-white-50">"à Nota Fiscal" ou "às Notas Fiscais"</span>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{t_da_nota}')">{t_da_nota}</span><br>
+                                    <span class="text-white-50">"da Nota Fiscal" ou "das Notas Fiscais"</span>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{t_num}')">{t_num}</span><br>
+                                    <span class="text-white-50">"nº 123" ou "detalhadas abaixo"</span>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <span class="badge bg-secondary cursor-pointer p-2 mb-1" onclick="inserirTag('{t_com_venc}')">{t_com_venc}</span><br>
+                                    <span class="text-white-50">"com emissão em 10/10/2026," (só se for 1 nota)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-success w-100 fw-bold text-dark mt-3" onclick="salvarTemplate()">💾 SALVAR ALTERAÇÕES NO MODELO</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalMudarSenha" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content custom-card border-0 text-light">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-warning">🔑 Nova Senha</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="password" id="nova-senha-input" class="form-control custom-input text-white text-center" placeholder="Digite a nova senha">
+                    <button class="btn btn-warning w-100 fw-bold text-dark mt-3" onclick="salvarNovaSenha()">ATUALIZAR SENHA</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalWhatsPreview" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-card border-0 text-light">
+                <div class="modal-header border-0 pb-0 justify-content-center mt-3">
+                    <h4 class="modal-title fw-bold" style="color: #00E676;"><span class="fs-4 me-2">💬</span> Enviar Alerta</h4>
+                </div>
+                <div class="modal-body px-4 pb-4">
+                    
+                    <div class="text-start mb-4 position-relative" style="background-color: #005C4B; border-radius: 0px 15px 15px 15px; padding: 15px; font-size: 0.95em; color: #E9EDEF; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                        <div style="position: absolute; top: 0; left: -10px; width: 0; height: 0; border-top: 15px solid #005C4B; border-left: 15px solid transparent;"></div>
+                        <span id="whats-texto-preview">⏳ Carregando mensagem...</span>
+                    </div>
+
+                    <div class="mb-4 text-start">
+                        <label class="form-label fw-bold text-white-50 small text-uppercase mb-2">Disparar para:</label>
+                        <div id="area-botoes-whats" class="d-flex flex-column gap-2">
+                            </div>
+                    </div>
+
+                    <button class="btn btn-outline-secondary text-white fw-bold w-100 rounded-pill py-2" data-bs-dismiss="modal">Fechar Painel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+
+    <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="sidebarMenu" style="width: 280px; border-right: 1px solid #00E5FF;">
+        <div class="offcanvas-header border-bottom border-secondary">
+            <h5 class="offcanvas-title fw-bold text-white">Navegação</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column gap-3">
+            <button class="btn btn-light fw-bold text-dark text-start nav-main-link" id="nav-dash" onclick="navegarPara('dashboard')">📊 Dashboard Visual</button>
+            
+            <button class="btn btn-outline-light fw-bold text-white text-start nav-main-link" id="nav-cob" onclick="navegarPara('cobrancas')">✉️ Painel de Cobranças</button>
+            
+            <div id="area-admin" class="d-flex flex-column gap-3 w-100" style="display: none !important;">
+                <button class="btn btn-outline-warning fw-bold text-white text-start nav-main-link w-100" id="nav-admin" onclick="navegarPara('admin')">⚙️ Gestão de Usuários</button>
+                <button class="btn btn-outline-success fw-bold text-white text-start nav-main-link w-100" id="nav-temp" onclick="navegarPara('templates')">📝 Modelos de E-mail</button>
+            </div>
+
+            <hr class="border-secondary m-0 mt-auto">
+            
+            <button class="btn btn-outline-warning fw-bold text-start text-white w-100" onclick="abrirModalSenha()">🔑 Alterar Senha</button>
+            <button class="btn btn-outline-danger fw-bold text-start text-white w-100" onclick="fazerLogout()">🚪 Sair do Sistema</button>
+        </div>
+    </div>
+</body>
+</html>

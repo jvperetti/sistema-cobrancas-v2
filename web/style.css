@@ -1,0 +1,376 @@
+/* Paleta de Cores Grupo Nascimento */
+:root {
+    --cor-fundo: #0a0a14;
+    --cor-azul-escuro: #002244;
+    --cor-azul-hover: #003366;
+    --cor-laranja: #FF6600;
+    --cor-laranja-hover: #ff7f2a;
+    --cor-texto: #ffffff;
+    --cor-card: rgba(30, 30, 48, 0.7);
+}
+
+body {
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Canvas Dinâmico no Fundo */
+#bgCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Logo Neon */
+/* Logo Neon (Agora contornando a imagem perfeitamente) */
+.logo-neon {
+    filter: drop-shadow(0 0 5px var(--cor-laranja)) drop-shadow(0 0 15px var(--cor-laranja));
+    transition: 0.3s;
+}
+.logo-neon:hover {
+    filter: drop-shadow(0 0 10px #ff4500) drop-shadow(0 0 25px #ffaa00);
+    transform: scale(1.05);
+}
+
+/* Painel Fixo (Sticky) */
+.sticky-painel {
+    position: sticky;
+    bottom: 10px;
+    z-index: 1000;
+    background-color: rgba(10, 10, 20, 0.85); /* Mais escuro para destacar botões */
+    border: 1px solid var(--cor-laranja);
+}
+
+.custom-card {
+    background-color: var(--cor-card);
+    border: 1px solid rgba(255, 102, 0, 0.1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+}
+
+.custom-input { background-color: rgba(0, 0, 0, 0.4); color: #ffffff !important; border: 1px solid rgba(255, 102, 0, 0.2); border-radius: 8px; }
+.custom-input:focus { border-color: var(--cor-laranja); box-shadow: 0 0 10px rgba(255, 102, 0, 0.5); background-color: rgba(0, 0, 0, 0.5); }
+
+.btn-action-custom { background-color: var(--cor-laranja); color: white; border: none; transition: all 0.3s ease; }
+.btn-action-custom:hover { background-color: var(--cor-laranja-hover); color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 102, 0, 0.4); }
+.btn-primary-custom {
+    background-color: var(--cor-azul-escuro);
+    color: #ffffff !important; /* O !important força o texto a ser branco ignorando o Bootstrap */
+    border: 1px solid rgba(0, 150, 255, 0.5);
+    transition: 0.3s;
+}
+
+.btn-primary-custom:hover {
+    background-color: var(--cor-azul-hover);
+    color: #ffffff !important;
+    box-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
+}
+
+
+/* --- SEPARAÇÃO DAS LINHAS COMO CARDS NEON --- */
+.table-custom { 
+    border-collapse: separate; 
+    border-spacing: 0 12px; 
+    color: white; 
+    --bs-table-bg: transparent; /* Mata o fundo branco do Bootstrap na raiz */
+}
+
+.table-custom thead th { 
+    border-bottom: none; 
+    text-transform: uppercase; 
+    font-size: 0.85rem; 
+    color: #aaa; 
+    padding-bottom: 10px; 
+    background-color: transparent !important;
+}
+
+/* Card Normal (Fundo escuro idêntico ao background, com borda neon azul) */
+.table-custom tbody tr { 
+    cursor: pointer; 
+    transition: 0.3s; 
+    background-color: rgba(10, 10, 20, 0.7) !important; /* Escuro translúcido */
+    box-shadow: inset 0 0 5px rgba(0, 150, 255, 0.1), 0 0 8px rgba(0, 150, 255, 0.2);
+}
+
+/* Base das células da tabela (Unificada, Compacta e Enxuta) */
+.table-custom tbody td { 
+    background-color: transparent !important; 
+    color: #ffffff !important; 
+    padding: 8px 10px; /* Reduzimos o espaço interno para as linhas ficarem mais finas */
+    font-size: 0.9rem; /* Diminuímos um pouco o tamanho da letra */
+    border-top: 1px solid rgba(0, 150, 255, 0.3); 
+    border-bottom: 1px solid rgba(0, 150, 255, 0.3); 
+    white-space: nowrap; /* Impede que o texto quebre de linha */
+    vertical-align: middle; /* Alinha o texto bem no centro da linha */
+    transition: all 0.2s;
+}
+
+.table-custom tbody td:first-child { 
+    border-left: 1px solid rgba(0, 150, 255, 0.3); 
+    border-radius: 10px 0 0 10px; 
+}
+.table-custom tbody td:last-child { 
+    border-right: 1px solid rgba(0, 150, 255, 0.3); 
+    border-radius: 0 10px 10px 0; 
+}
+
+.table-custom tbody tr:hover { 
+    background-color: rgba(0, 34, 68, 0.6) !important; /* Leve clareada no hover */
+    box-shadow: inset 0 0 10px rgba(0, 150, 255, 0.4), 0 0 15px rgba(0, 150, 255, 0.4); 
+    transform: scale(1.01); 
+}
+
+/* Card Urgente (Efeito de Fogo Intenso em TODO o Card) */
+.row-urgente {
+    animation: cardEmChamas 1s infinite alternate !important;
+}
+
+.row-urgente td { 
+    border-top: 1px solid rgba(255, 69, 0, 0.8) !important;
+    border-bottom: 1px solid rgba(255, 69, 0, 0.8) !important;
+    color: #fff3e0 !important; /* Deixa o texto levemente "quente" (amarelado) */
+    text-shadow: 0 0 5px rgba(255, 102, 0, 0.6); /* Brilho no texto para não sumir no fogo */
+}
+
+/* Mantém as bordas arredondadas e laterais pegando fogo */
+.row-urgente td:first-child { border-left: 1px solid rgba(255, 69, 0, 0.8) !important; }
+.row-urgente td:last-child { border-right: 1px solid rgba(255, 69, 0, 0.8) !important; }
+
+/* A Animação que faz o fundo e a borda pulsarem juntos */
+@keyframes cardEmChamas {
+    0% { 
+        background-color: rgba(60, 10, 0, 0.85); /* Vermelho escuro (Brasa) */
+        box-shadow: inset 0 0 15px rgba(255, 69, 0, 0.4), 0 0 10px rgba(255, 0, 0, 0.3); 
+    }
+    100% { 
+        background-color: rgba(180, 45, 0, 0.9); /* Laranja forte (Chama alta) */
+        box-shadow: inset 0 0 50px rgba(255, 140, 0, 0.9), 0 0 35px rgba(255, 69, 0, 0.8); 
+    }
+}
+
+/* =========================================
+   CORES DINÂMICAS DOS CARDS POR STATUS (CORES FORTES)
+   ========================================= */
+
+/* 1. Card: Pedido Concluído (Bloco Azul Intenso) */
+.row-concluido { 
+    background-color: rgba(0, 80, 160, 0.85) !important; /* Azul quase sólido */
+    box-shadow: 0 4px 15px rgba(0, 150, 255, 0.4) !important; 
+}
+.row-concluido td { border-color: #00aaff !important; color: #ffffff !important; }
+.row-concluido:hover { background-color: rgba(0, 100, 190, 0.95) !important; transform: scale(1.02); }
+
+/* 2. Card: Entregue (Bloco Verde Intenso) */
+.row-entregue { 
+    background-color: rgba(0, 90, 30, 0.85) !important; /* Verde sólido */
+    box-shadow: 0 4px 15px rgba(0, 255, 100, 0.3) !important; 
+}
+.row-entregue td { border-color: #00ff66 !important; color: #ffffff !important; }
+.row-entregue:hover { background-color: rgba(0, 110, 40, 0.95) !important; transform: scale(1.02); }
+
+/* 3. Card: Gerado (Bloco Amarelo/Dourado Intenso) */
+.row-gerado { 
+    background-color: rgba(160, 110, 0, 0.85) !important; /* Dourado escuro sólido */
+    box-shadow: 0 4px 15px rgba(255, 200, 0, 0.3) !important; 
+}
+.row-gerado td { border-color: #ffcc00 !important; color: #ffffff !important; text-shadow: 1px 1px 2px #000; }
+.row-gerado:hover { background-color: rgba(180, 130, 0, 0.95) !important; transform: scale(1.02); }
+
+/* O status "Pendente - Luana" e "Em Andamento" continuam com o Neon Azul escuro padrão do sistema */
+/* Card Ativo (Clicado) */
+.table-active { 
+    background-color: rgba(255, 102, 0, 0.15) !important; 
+    box-shadow: inset 0 0 20px rgba(255, 102, 0, 0.4) !important; 
+}
+.table-active td { border-color: var(--cor-laranja) !important; }
+
+/* Textos de Status */
+.tag-ALERTA_GERAR { color: #58a6ff !important; font-weight: 600; text-shadow: 0 0 5px rgba(88, 166, 255, 0.5); }
+.tag-ALERTA_PAGAR { color: #ffad0a !important; font-weight: 600; text-shadow: 0 0 5px rgba(255, 173, 10, 0.5); }
+.tag-ALERTA_CRITICO { color: #f85149 !important; font-weight: bold; text-shadow: 0 0 8px rgba(248, 81, 73, 0.7); }
+.tag-CONCLUIDO { color: #00c853 !important; font-weight: 600; text-shadow: 0 0 5px rgba(0, 200, 83, 0.5); }
+.tag-URGENTE_ENTREGA { color: #ffcccb !important; font-weight: bold; text-shadow: 0 0 10px #ff4500; }
+
+.nav-tabs .nav-link { color: #aaa; border: none; font-weight: bold; font-size: 1.1rem; transition: 0.3s; }
+.nav-tabs .nav-link:hover { color: var(--cor-laranja); text-shadow: 0 0 10px var(--cor-laranja); }
+.nav-tabs .nav-link.active { background-color: transparent; color: var(--cor-laranja); border-bottom: 3px solid var(--cor-laranja); text-shadow: 0 0 10px var(--cor-laranja); }
+.nav-pills .nav-link { color: #888; border-radius: 20px; margin: 0 5px; font-weight: 600; border: 1px solid transparent; }
+.nav-pills .nav-link.active { background-color: var(--cor-azul-escuro); color: white; border: 1px solid var(--cor-laranja); box-shadow: 0 0 10px rgba(255, 102, 0, 0.3); }
+
+/* 4. Card: Devolvido (Fogo Magenta Choque / Super Chamativo) */
+.row-devolvido {
+    animation: chamasDevolvido 0.8s infinite alternate !important; /* Pisca um pouco mais rápido que a urgência */
+}
+.row-devolvido td { 
+    border-top: 1px solid rgba(255, 0, 100, 0.9) !important;
+    border-bottom: 1px solid rgba(255, 0, 100, 0.9) !important;
+    color: #ffffff !important; 
+    text-shadow: 0 0 10px rgba(255, 0, 100, 0.8) !important; 
+}
+.row-devolvido td:first-child { border-left: 1px solid rgba(255, 0, 100, 0.9) !important; }
+.row-devolvido td:last-child { border-right: 1px solid rgba(255, 0, 100, 0.9) !important; }
+
+@keyframes chamasDevolvido {
+    0% { 
+        background-color: rgba(80, 0, 40, 0.9);
+        box-shadow: inset 0 0 20px rgba(255, 0, 100, 0.5), 0 0 15px rgba(255, 0, 50, 0.4); 
+    }
+    100% { 
+        background-color: rgba(200, 0, 70, 0.95);
+        box-shadow: inset 0 0 50px rgba(255, 20, 120, 0.95), 0 0 40px rgba(255, 0, 100, 0.9); 
+    }
+}
+
+/* Card: Pagamento Parcial (Ticket ou Próspera pendentes) - Roxo Neon */
+.row-parcial { 
+    background-color: rgba(90, 0, 150, 0.4) !important; 
+    box-shadow: inset 0 0 8px rgba(180, 0, 255, 0.4) !important; 
+}
+.row-parcial td { border-color: #d400ff !important; color: #fae0ff !important; }
+.row-parcial:hover { background-color: rgba(90, 0, 150, 0.6) !important; transform: scale(1.01); }
+
+
+/* ==========================================
+   PINTURA INTERIOR DAS LINHAS DE COBRANÇA (CORRIGIDO)
+   ========================================== */
+
+/* 🟢 Faixa Verde (Até 15 dias): Apenas texto verde */
+.table-custom tbody tr.faixa-verde td {
+    color: #00E676 !important; 
+}
+
+/* 🟡 Faixa Amarela (16 a 30 dias): Pintura no fundo e bordas amarelas */
+.table-custom tbody tr.faixa-amarela td {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    color: #FFC107 !important;
+    border-top: 1px solid rgba(255, 193, 7, 0.3) !important;
+    border-bottom: 1px solid rgba(255, 193, 7, 0.3) !important;
+}
+.table-custom tbody tr.faixa-amarela td:first-child { border-left: 1px solid rgba(255, 193, 7, 0.3) !important; }
+.table-custom tbody tr.faixa-amarela td:last-child { border-right: 1px solid rgba(255, 193, 7, 0.3) !important; }
+
+/* 🟠 Faixa Laranja (31 a 60 dias) */
+.table-custom tbody tr.faixa-laranja td {
+    background-color: rgba(255, 112, 67, 0.15) !important;
+    color: #FF7043 !important;
+    border-top: 1px solid rgba(255, 112, 67, 0.3) !important;
+    border-bottom: 1px solid rgba(255, 112, 67, 0.3) !important;
+}
+.table-custom tbody tr.faixa-laranja td:first-child { border-left: 1px solid rgba(255, 112, 67, 0.3) !important; }
+.table-custom tbody tr.faixa-laranja td:last-child { border-right: 1px solid rgba(255, 112, 67, 0.3) !important; }
+
+/* 🔴 Faixa Vermelha (61 a 90 dias) */
+.table-custom tbody tr.faixa-vermelha td {
+    background-color: rgba(229, 57, 53, 0.15) !important;
+    color: #ff5252 !important;
+    border-top: 1px solid rgba(229, 57, 53, 0.3) !important;
+    border-bottom: 1px solid rgba(229, 57, 53, 0.3) !important;
+}
+.table-custom tbody tr.faixa-vermelha td:first-child { border-left: 1px solid rgba(229, 57, 53, 0.3) !important; }
+.table-custom tbody tr.faixa-vermelha td:last-child { border-right: 1px solid rgba(229, 57, 53, 0.3) !important; }
+
+/* 🟣 Faixa Roxa (91 a 120 dias) */
+.table-custom tbody tr.faixa-roxa td {
+    background-color: rgba(142, 36, 170, 0.20) !important;
+    color: #e040fb !important;
+    border-top: 1px solid rgba(142, 36, 170, 0.3) !important;
+    border-bottom: 1px solid rgba(142, 36, 170, 0.3) !important;
+}
+.table-custom tbody tr.faixa-roxa td:first-child { border-left: 1px solid rgba(142, 36, 170, 0.3) !important; }
+.table-custom tbody tr.faixa-roxa td:last-child { border-right: 1px solid rgba(142, 36, 170, 0.3) !important; }
+
+
+/* ⚫ Faixa Preta (+120 dias): EFEITO FOGO NEGRO MONOCROMÁTICO (Aura Cinza/Prata) */
+.table-custom tbody tr.faixa-preta {
+    animation: fogoNegro 1.5s infinite alternate !important; 
+}
+
+.table-custom tbody tr.faixa-preta td {
+    background-color: rgba(0, 0, 0, 0.95) !important; /* Preto puro */
+    color: #ffffff !important; /* Texto branco forte */
+    border-top: 1px solid rgba(150, 150, 150, 0.5) !important; /* Borda cinza/prata */
+    border-bottom: 1px solid rgba(150, 150, 150, 0.5) !important;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5) !important; /* Brilho branco no texto */
+}
+
+.table-custom tbody tr.faixa-preta td:first-child { 
+    border-left: 1px solid rgba(150, 150, 150, 0.5) !important; 
+}
+.table-custom tbody tr.faixa-preta td:last-child { 
+    border-right: 1px solid rgba(150, 150, 150, 0.5) !important; 
+}
+
+/* 🔵 Aviso Amigável: Linha amigável com borda tracejada */
+.table-custom tbody tr.faixa-aviso td {
+    color: #00E5FF !important; /* Azul neon simpático */
+    background-color: rgba(0, 229, 255, 0.05) !important;
+    border-top: 1px dashed rgba(0, 229, 255, 0.3) !important;
+    border-bottom: 1px dashed rgba(0, 229, 255, 0.3) !important;
+}
+
+/* ⚪ No Prazo: Notas recém emitidas ficam cinzas (apagadas) para não poluir a tela */
+.table-custom tbody tr.faixa-prazo td {
+    color: #555555 !important; 
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 🔥 A MÁGICA DO FOGO NEGRO (Sem Roxo, Apenas Preto, Cinza e Branco) 🔥 */
+@keyframes fogoNegro {
+    0% { 
+        box-shadow: inset 0 0 15px rgba(0, 0, 0, 1), 0 0 10px rgba(100, 100, 100, 0.3); 
+        background-color: rgba(10, 10, 10, 0.95) !important;
+    }
+    50% {
+        box-shadow: inset 0 0 35px rgba(50, 50, 50, 0.9), 0 0 20px rgba(150, 150, 150, 0.5); 
+        background-color: rgba(0, 0, 0, 1) !important;
+    }
+    100% { 
+        box-shadow: inset 0 0 50px rgba(0, 0, 0, 1), 0 0 35px rgba(200, 200, 200, 0.6); 
+        background-color: rgba(5, 5, 5, 0.95) !important;
+    }
+}
+
+/* Efeito Hover: Dá um brilho prateado extra ao passar o mouse */
+.table-custom tbody tr.faixa-preta:hover td {
+    filter: brightness(1.5);
+}
+
+/* =========================================
+   EFEITOS VISUAIS: HOVER EM TODAS AS FAIXAS
+   ========================================= */
+
+/* Dá um brilho extra ao passar o mouse nas linhas de cores fortes */
+.table-custom tbody tr.faixa-amarela:hover td,
+.table-custom tbody tr.faixa-laranja:hover td,
+.table-custom tbody tr.faixa-vermelha:hover td,
+.table-custom tbody tr.faixa-roxa:hover td {
+    filter: brightness(1.4);
+}
+
+/* O fogo negro fica ainda mais agressivo e com contraste alto no Hover */
+.table-custom tbody tr.faixa-preta:hover td {
+    filter: brightness(1.3) contrast(1.2);
+}
+
+/* =========================================
+   MISC & NAVEGAÇÃO
+   ========================================= */
+.nav-tabs .nav-link { color: #aaa; border: none; font-weight: bold; font-size: 1.1rem; transition: 0.3s; }
+.nav-tabs .nav-link:hover { color: var(--cor-laranja); text-shadow: 0 0 10px var(--cor-laranja); }
+.nav-tabs .nav-link.active { background-color: transparent; color: var(--cor-laranja); border-bottom: 3px solid var(--cor-laranja); text-shadow: 0 0 10px var(--cor-laranja); }
+
+/* Scrollbar Customizada Neon (Opcional, mas fica massa!) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+::-webkit-scrollbar-thumb { background: var(--cor-azul-escuro); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--cor-laranja); }
