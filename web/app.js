@@ -443,28 +443,83 @@ function prepararModalEscolha(nivel) {
         <div class="modal-body px-4 pb-4 text-center">
             <p class="text-white-50 mb-4">Você está disparando um alerta da <b>${titulo}</b>. Qual modelo deseja utilizar?</p>
             <div class="d-flex flex-column gap-3">
-                <button class="btn btn-primary fw-bold py-2" onclick="confirmarEnvio90Dias('1')">${btn1Text}</button>
-                <button class="btn btn-danger fw-bold py-2" onclick="confirmarEnvio90Dias('2')">${btn2Text}</button>
-            </div>
+                <button class="btn btn-primary fw-bold py-2" onclick="executarEnvioBackend('1')">${btn1Text}</button>
+                <button class="btn btn-danger fw-bold py-2" onclick="executarEnvioBackend('2')">${btn2Text}</button>
+            </div>
             <button class="btn btn-outline-secondary text-white fw-bold w-100 rounded-pill py-2 mt-4" data-bs-dismiss="modal">Cancelar</button>
         </div>
     `;
 }
 
-async function executarEnvioBackend(escolha90) {
-    modal90.hide();
-    let sel = obterSelecionadas();
-    let email = document.getElementById('combo-email').value;
-    
-    let btn = document.querySelector('.btn-action-custom');
-    btn.innerText = "⏳ ENVIANDO..."; btn.disabled = true;
+let radarInterval = null;
 
-    let res = await eel.enviar_email_backend(sel, email, escolha90)();
-    
-    btn.innerText = "📧 GERAR E-MAIL"; btn.disabled = false;
-    
-    if (res.status === "erro") alert("Erro: " + res.msg);
-    else carregarDadosEFiltrar(); // Atualiza a tela pós envio
+async function executarEnvioBackend(escolha90) {
+    try {
+        if(typeof modal90 !== 'undefined') modal90.hide();
+        
+        let sel = obterSelecionadas();
+        let email = document.getElementById('combo-email').value;
+        
+        let btn = document.querySelector('.btn-action-custom');
+        btn.innerText = "⏳ ABRINDO OUTLOOK..."; 
+        btn.disabled = true;
+
+        // 1. Dispara o Python
+        let res = await eel.enviar_email_backend(sel, email, escolha90)();
+        
+        if (res.status === "erro") {
+            restaurarBotaoEnvio(btn);
+            alert("Erro: " + res.msg);
+        } 
+        else if (res.status === "pendente_radar") {
+            // 2. 📡 LIGA O RADAR! A Carol agora tem tempo infinito para editar.
+            btn.innerText = "📡 AGUARDANDO ENVIO... (Clique p/ Cancelar)"; 
+            btn.className = "btn btn-warning fw-bold text-dark px-4"; // Fica amarelo piscante
+            btn.disabled = false;
+            
+            // Troca a ação do botão para cancelar o Radar se ela desistir
+            btn.onclick = cancelarRadarAction;
+
+            radarInterval = setInterval(async () => {
+                let resRadar = await eel.radar_buscar_email_enviado()();
+
+                if (resRadar.status === "encontrado") {
+                    clearInterval(radarInterval); // Desliga a antena
+                    restaurarBotaoEnvio(btn);     // Volta o botão ao normal
+                    
+                    await eel.carregar_dados_reais(false)();
+                    carregarDadosEFiltrar(); 
+                    alert("✅ MÁGICA FEITA!\n\nO Radar detectou que você enviou o e-mail no Outlook e salvou a Cópia Oficial (.msg) na pasta do cliente!");
+                }
+                else if (resRadar.status === "cancelado") {
+                    clearInterval(radarInterval);
+                    restaurarBotaoEnvio(btn);
+                }
+                // Se for "buscando", ele fica em silêncio trabalhando no fundo!
+            }, 3000); // 3000ms = 3 segundos
+        }
+    } catch (erroDeJs) {
+        alert("❌ O Javascript tropeçou: " + (erroDeJs.message || erroDeJs));
+        restaurarBotaoEnvio(document.querySelector('.btn-warning') || document.querySelector('.btn-action-custom'));
+    }
+}
+
+function restaurarBotaoEnvio(btn) {
+    if(btn) {
+        btn.innerText = "📧 GERAR E-MAIL";
+        btn.className = "btn btn-action-custom fw-bold text-nowrap px-4";
+        btn.onclick = iniciarEnvio;
+        btn.disabled = false;
+    }
+}
+
+async function cancelarRadarAction() {
+    if(confirm("Deseja CANCELAR O RADAR?\n\nO sistema não vai mais tentar salvar a cópia deste e-mail.")) {
+        clearInterval(radarInterval);
+        await eel.cancelar_gravacao_evidencia()();
+        restaurarBotaoEnvio(this); // O "this" é o próprio botão clicado
+        alert("Radar desativado.");
+    }
 }
 
 function abrirDetalhes(nota) {
@@ -861,13 +916,17 @@ async function carregarTemplates() {
     tbody.innerHTML = "";
     
     lista.forEach(t => {
+        // 🛡️ ESCUDO: Transforma o texto e as aspas em um código seguro!
+        let assuntoSeguro = encodeURIComponent(t.assunto || '');
+        let corpoSeguro = encodeURIComponent(t.corpo || '');
+
         tbody.innerHTML += `
             <tr>
                 <td class="text-start ps-4 fw-bold text-white">${t.nome}</td>
                 <td class="text-white-50">${t.assunto}</td>
                 <td>
                     <button class="btn btn-sm btn-outline-success fw-bold" 
-                        onclick="abrirModalTemplate('${t.id}', '${t.nome}', '${t.assunto}', \`${t.corpo}\`, '${t.anexo}', '${t.responsavel}')">✏️ Editar</button>
+                        onclick="abrirModalTemplate('${t.id}', '${t.nome}', decodeURIComponent('${assuntoSeguro}'), decodeURIComponent('${corpoSeguro}'), '${t.anexo}', '${t.responsavel}')">✏️ Editar</button>
                 </td>
             </tr>
         `;
@@ -1025,4 +1084,41 @@ async function abrirPastaCliente(cliente, empresa) {
     if (res.status === "erro") {
         alert("❌ Erro: " + res.msg);
     }
+}
+
+// ==========================================
+// CENTRAL DE CONSULTA GLOBAL DE HISTÓRICOS
+// ==========================================
+let modalBuscaHist;
+
+async function abrirModalBuscaHistorico() {
+    if (!modalBuscaHist) {
+        modalBuscaHist = new bootstrap.Modal(document.getElementById('modalBuscaHistorico'));
+    }
+    
+    // Mostra o modal rapidão com um "Carregando"
+    let select = document.getElementById('combo-busca-historico');
+    select.innerHTML = '<option value="">⏳ Buscando contratos no banco de dados...</option>';
+    modalBuscaHist.show();
+
+    // Puxa os clientes que têm histórico lá no Python
+    let clientes = await eel.listar_clientes_com_historico()();
+    
+    // Monta as opções do Select
+    select.innerHTML = '<option value="">-- Selecione o Contrato --</option>';
+    clientes.forEach(c => {
+        select.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+}
+
+function irParaTimelineBusca() {
+    let clienteSelecionado = document.getElementById('combo-busca-historico').value;
+    
+    if (!clienteSelecionado) {
+        return alert("Por favor, selecione um contrato na lista!");
+    }
+    
+    // Esconde o modal de busca e chama a nossa função já existente de abrir a Timeline!
+    modalBuscaHist.hide();
+    abrirTimeline(clienteSelecionado);
 }

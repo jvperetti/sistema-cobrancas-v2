@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='Sistema de Cobrancas Nascimento',
+    name='Sistema de Cobrancas Nascimento v2',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

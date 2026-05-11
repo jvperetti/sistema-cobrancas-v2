@@ -2,6 +2,7 @@ import os
 import json
 import sqlite3
 import pandas as pd
+import random
 import eel
 from datetime import datetime, timedelta
 import win32com.client as win32
@@ -56,7 +57,13 @@ PATH_DB = os.path.join(PATH_DADOS, "banco_sistema.db")
 # Seus caminhos originais (mantenha os que você usa na rede)
 PATH_2025 = r"S:\Gestão Financeira\Faturamento contratos\Relatório de Serviços  2025\Relatório de serviços Grupo Nascimento 2025.xlsx"
 PATH_2026 = r"S:\Gestão Financeira\Faturamento contratos\Relatório de Serviços  2026\Relatório de serviços Grupo Nascimento 2026.xlsx"
+# --- CAMINHO DOS ARQUIVOS E ANEXOS ---
+
+# Caminho OFICIAL (Comentado para a fase de testes):
 PATH_EVIDENCIAS_RAIZ = r"S:\Gestão Financeira\Controle cobranças\Cobranças"
+
+# Caminho de TESTES (Homologação):
+# PATH_EVIDENCIAS_RAIZ = r"S:\SISTEMAS\DADOS\teste cobranças"
 
 # ==============================================================================
 # 🚀 FUNÇÃO UTILITÁRIA PARA LEITURA RÁPIDA DE EXCEL NA REDE
@@ -161,6 +168,7 @@ class GestorCobrancaEel:
         self.historico = self.carregar_historico()
         self.ultima_filtragem = [] 
         self.assinatura_base64 = ""
+        self.email_em_transito = {}
         
     def semear_templates_iniciais(self):
         """Insere os textos padrões da nova regra da CEO completos"""
@@ -178,14 +186,14 @@ class GestorCobrancaEel:
                  "Prezados(as),<br><br>Cumprimentando-os cordialmente, vimos, por meio da presente <b>NOTIFICAÇÃO ADMINISTRATIVA FORMAL</b>, reiterar, em caráter expresso, técnico e fundamentado, a pendência financeira relacionada ao Contrato <b>{cliente}</b>.<br><br>Até o presente momento, permanece <b>sem a devida liquidação</b> o pagamento referente {t_nota}{t_num}, {t_emi}{t_comp}{t_venc}, configurando atraso administrativo relevante e injustificado de <b>{dias_max} dias</b>.<br><br>{lista_html}<br><b>Valor Total Atualizado: {valor_total}</b><br><br>Importa destacar que a empresa, desde o início da contratação, vem adotando postura absolutamente colaborativa. Durante todo o período contratual, os serviços foram mantidos de forma contínua e ininterrupta.<br><br>Não obstante o histórico consistente de tratativas, a pendência permanece sem qualquer solução efetiva até o momento, impactando diretamente a equação econômico-financeira do contrato. Cumpre registrar, de forma expressa, que a contratada <b>não deu causa ao atraso verificado</b>.<br><br><b>DA POSSÍVEL ATUAÇÃO DO TRIBUNAL DE CONTAS</b><br>Diante disso, a persistência da inadimplência poderá ensejar, caso não regularizada em prazo razoável, a comunicação formal dos fatos ao Tribunal de Contas competente, para fins de apuração e adoção das medidas cabíveis.<br><br>Tal providência poderá ser adotada sem prejuízo da utilização concomitante ou posterior das medidas judiciais cabíveis.<br><br>Dessa forma, solicitamos formalmente a imediata regularização dos pagamentos em atraso ou a indicação precisa da data prevista para quitação do débito. Fica desde já formalmente registrada a reserva de adoção de todas as medidas administrativas e jurídicas cabíveis."),
                 
                 ("FAIXA VERMELHA - AUTORIDADE SUP. II (61 A 90 DIAS)", "Notificação à Autoridade Superior II - {cliente}", 
-                 "Prezados(as),<br><br>Encaminhamos a presente comunicação, em caráter formal e institucional, para fins de ciência da autoridade superior, acerca da pendência financeira/administrativa relacionada ao Contrato <b>{cliente}</b>.<br><br>Não obstante o cenário de plena adimplência contratual por parte da empresa, permanece sem solução a pendência financeira referente {t_nota}{t_num}, com emissão em {t_com_venc}, totalizando <b>{dias_max} dias de atraso</b>, detalhada abaixo:<br><br>{lista_html}<br><b>Valor Total Atualizado: {valor_total}</b><br><br>A empresa vem atuando com absoluta boa-fé, responsabilidade institucional e espírito colaborativo. Contudo, a persistência da inadimplência, mesmo diante da existência de dotação orçamentária, pode indicar situação de irregularidade na execução orçamentária e financeira.<br><br>O prolongamento da situação ultrapassa as tratativas administrativas ordinárias, produzindo impacto relevante sobre o equilíbrio econômico-financeiro do contrato. A manutenção do quadro poderá ensejar a necessidade de comunicação formal dos fatos ao Tribunal de Contas competente.<br><br>Diante do exposto, solicita-se, respeitosamente:<br><ul><li>A ciência da autoridade superior quanto à situação relatada;</li><li>O apoio institucional para viabilização da regularização da pendência;</li><li>A informação acerca da previsão de regularização da obrigação pendente.</li></ul><br>Seguimos à disposição para quaisquer esclarecimentos."),
-                
+                 "Prezados(as),<br><br>Encaminhamos a presente comunicação, em caráter formal e institucional, para fins de ciência da autoridade superior, acerca da pendência financeira/administrativa relacionada ao Contrato <b>{cliente}</b>, atualmente em execução junto a este órgão, cujo objeto consiste na prestação continuada de serviços.<br><br>Conforme já amplamente registrado nas tratativas anteriores, a empresa vem mantendo, de forma contínua, regular e plenamente adequada, a execução integral dos serviços contratados, preservando o padrão de qualidade, a regularidade operacional dos postos e o cumprimento de todas as obrigações assumidas, sem qualquer interrupção, redução de atividades ou prejuízo ao interesse público.<br><br>Não obstante esse cenário de plena adimplência contratual por parte da empresa, permanece sem solução a pendência administrativa/financeira referente {t_nota}{t_num}, {t_emi}{t_comp}{t_venc} totalizando <b>{dias_max} dias de atraso</b>, mesmo após sucessivas tratativas realizadas junto aos setores competentes, todas devidamente documentadas.<br><br>{lista_html}<br><b>Valor Total Atualizado: {valor_total}</b><br><br>Importa registrar, de forma expressa, que:<br><ul><li>A empresa vem atuando com absoluta boa-fé, responsabilidade institucional e espírito colaborativo;</li><li>Todas as tentativas iniciais foram conduzidas em nível técnico e administrativo, com registro formal das comunicações realizadas;</li><li>Os serviços continuam sendo prestados regularmente, sem qualquer descontinuidade;</li><li>Os colaboradores permanecem em atividade normal, com integral cumprimento das obrigações trabalhistas, previdenciárias e operacionais;</li><li>Não houve, em momento algum, paralisação contratual ou comprometimento da continuidade do serviço público.</li></ul><br>Cumpre destacar, ainda, que o contrato em questão possui dotação orçamentária previamente prevista, evidenciando que os recursos financeiros destinados à sua execução foram regularmente planejados e vinculados à despesa pública correspondente.<br><br>Nesse contexto, a persistência da inadimplência, mesmo diante da existência de previsão orçamentária, pode indicar, em tese, situação de irregularidade na execução orçamentária e financeira, na medida em que pode refletir:<br><ul><li>Eventual descompasso entre o empenho, liquidação e pagamento da despesa pública;</li><li>Possível inadequação na gestão financeira dos recursos vinculados ao contrato;</li><li>Risco de comprometimento dos princípios da responsabilidade fiscal e da regular execução da despesa pública.</li></ul><br>O prolongamento da situação ultrapassa, portanto, o âmbito das tratativas administrativas ordinárias, passando a produzir impacto relevante sobre o equilíbrio econômico-financeiro do contrato, especialmente em razão da natureza continuada dos serviços e da elevada carga de obrigações trabalhistas envolvidas.<br><br>Diante desse cenário, a presente comunicação tem por finalidade dar ciência à autoridade superior, possibilitando a adoção de providências institucionais adequadas para a regularização da situação, preservando-se a continuidade do serviço público e a integridade da relação contratual.<br><br>Ressalta-se, ainda, que a manutenção do quadro de inadimplemento poderá, caso não seja regularizado em prazo razoável, ensejar a necessidade de comunicação formal dos fatos ao Tribunal de Contas competente, órgão constitucionalmente responsável pelo controle da legalidade, legitimidade e regularidade da execução orçamentária, financeira e contratual da Administração Pública.<br><br>Nesse contexto, poderão ser objeto de análise pelo órgão de controle, dentre outros aspectos:<br><ul><li>A correta execução orçamentária do contrato;</li><li>A regularidade do empenho, liquidação e pagamento da despesa;</li><li>A destinação dos recursos públicos vinculados à contratação;</li><li>Eventual responsabilidade administrativa dos gestores públicos envolvidos.</li></ul><br>A presente comunicação, portanto, busca antecipar a solução administrativa da pendência, evitando a necessidade de adoção de medidas externas de controle ou providências de natureza mais gravosa.<br><br>Registra-se que a empresa permanece integralmente comprometida com a execução contratual e com a manutenção da qualidade dos serviços prestados, reiterando sua postura colaborativa e sua disposição para construção de solução administrativa célere, eficiente e institucionalmente adequada.<br><br>Todavia, destaca-se que a persistência da situação poderá ensejar, cumulativamente, a adoção de medidas administrativas e jurídicas cabíveis, inclusive aquelas voltadas à recomposição do equilíbrio econômico-financeiro do contrato e à proteção dos direitos da contratada.<br><br>Diante do exposto, solicita-se, respeitosamente:<br><ul><li>A ciência da autoridade superior quanto à situação relatada;</li><li>O apoio institucional para viabilização da regularização da pendência;</li><li>A indicação de providências concretas ou encaminhamentos administrativos adotados;</li><li>A informação acerca da previsão de regularização da obrigação pendente.</li></ul><br>Seguimos à disposição para quaisquer esclarecimentos adicionais e para eventual reunião institucional que se faça necessária.<br><br>Sem mais para o momento, aguardamos manifestação."),
+
                 ("FAIXA ROXA - MINUTA JURÍDICO (91 A 120 DIAS)", "MINUTA INTERNA PARA ENCAMINHAMENTO JURÍDICO | {cliente}", 
-                 "<b>MINUTA INTERNA PARA ENCAMINHAMENTO JURÍDICO</b><br><br><b>Empresa:</b> {ass_emp}<br><b>Contrato:</b> {cliente}<br><b>Valor em aberto:</b> {valor_total}<br><b>Atraso Máximo:</b> {dias_max} dias<br><br>{lista_html}<br><b>1. HISTÓRICO RESUMIDO</b><br>A empresa realizou, ao longo do período de inadimplência, sucessivas e devidamente documentadas tratativas administrativas. Dentre as medidas adotadas, destacam-se: envio de comunicações formais por e-mail, reuniões administrativas e escalonamento institucional.<br><br><b>2. EXECUÇÃO CONTRATUAL</b><br>Durante todo o período, a empresa manteve integralmente a execução contratual. Registra-se que a inadimplência não decorre de qualquer falha da contratada, mas exclusivamente de pendência administrativa do contratante.<br><br><b>3. ENCAMINHAMENTO PARA ANÁLISE</b><br>Encaminha-se o presente dossiê ao Comitê Gestor e ao setor jurídico para avaliação estratégica quanto às medidas cabíveis, incluindo, mas não se limitando a:<br><ul><li>Intensificação da cobrança administrativa formal;</li><li>Adoção de medida judicial cabível;</li><li>Requerimento de recomposição do equilíbrio econômico-financeiro.</li></ul>"),
-                
+                 "<b>MINUTA INTERNA PARA ENCAMINHAMENTO JURÍDICO</b><br><br><b>Empresa:</b> {ass_emp}<br><b>Contrato / Órgão:</b> {cliente}<br><b>Valor em aberto:</b> {valor_total}<br><b>Atraso Máximo:</b> {dias_max} dias<br><br>{lista_html}<br><b>1. HISTÓRICO RESUMIDO</b><br>A empresa realizou, ao longo do período de inadimplência, sucessivas e devidamente documentadas tratativas administrativas, com o objetivo de viabilizar a regularização amigável da pendência, em estrita observância aos princípios da boa-fé, cooperação e preservação da relação contratual.<br><br>Dentre as medidas adotadas, destacam-se:<br><ul><li>Envio de comunicações formais por e-mail;</li><li>Contatos institucionais com a fiscalização contratual;</li><li>Tratativas junto ao setor financeiro do órgão;</li><li>Realização de reuniões administrativas;</li><li>Expedição de notificações formais;</li><li>Escalonamento institucional às instâncias superiores.</li></ul><br>Todas as ações foram devidamente registradas, compondo histórico probatório contínuo e consistente.<br><br><b>2. EXECUÇÃO CONTRATUAL</b><br>Durante todo o período, a empresa manteve integralmente a execução contratual, destacando-se que:<br><ul><li>Os serviços permaneceram ativos, regulares e contínuos;</li><li>Não houve interrupção operacional ou paralisação de postos;</li><li>Não foi causado qualquer prejuízo à Administração;</li><li>Os colaboradores permaneceram regularmente em atividade;</li><li>A contratada manteve integral cumprimento de suas obrigações trabalhistas, previdenciárias, fiscais e operacionais.</li></ul><br>Registra-se, portanto, que a inadimplência não decorre de qualquer falha da contratada, mas exclusivamente de pendência administrativa do contratante.<br><br><b>3. SITUAÇÃO ATUAL</b><br>Permanece pendente a regularização dos pagamentos detalhados acima, já enquadrados na faixa de risco contratual crítica (Faixa Roxa), com impacto direto e relevante sobre o equilíbrio econômico-financeiro do contrato e sobre a sustentabilidade da execução dos serviços.<br><br><b>4. DOCUMENTOS ANEXADOS</b><br>Instrui o presente encaminhamento o conjunto documental completo, composto por:<br><ul><li>Contrato administrativo;</li><li>Notas fiscais emitidas;</li><li>Planilha de controle de atraso;</li><li>Memória de cálculo de juros e encargos moratórios;</li><li>E-mails enviados e recebidos;</li><li>Notificações administrativas expedidas;</li><li>Registros complementares de tratativas (inclusive comunicações institucionais e operacionais).</li></ul><br><b>5. ENCAMINHAMENTO PARA ANÁLISE</b><br>Diante do exposto, encaminha-se o presente dossiê ao Comitê Gestor e ao setor jurídico para avaliação estratégica quanto às medidas cabíveis, incluindo, mas não se limitando a:<br><ul><li>Intensificação da cobrança administrativa formal;</li><li>Adoção de medida judicial cabível;</li><li>Propositura de ação de obrigação de fazer;</li><li>Eventual formulação de pedido de tutela de urgência;</li><li>Requerimento de recomposição do equilíbrio econômico-financeiro do contrato;</li><li>Demais providências jurídicas adequadas ao caso concreto.</li></ul><br><b>6. CONSIDERAÇÕES FINAIS</b><br>O presente documento consolida, de forma organizada e tecnicamente fundamentada, todo o histórico da inadimplência, evidenciando a atuação diligente da empresa, a ausência de sua responsabilidade pela mora e a necessidade de adoção de medidas mais incisivas para resguardo de seus direitos.<br><br><b>Assinaturas:</b><br>Responsável Financeiro<br>Gerência Operacional<br>Diretoria<br>Presidência"),
+
                 ("FAIXA ROXA - PARECER PREVENTIVO (91 A 120 DIAS)", "PARECER INTERNO PREVENTIVO | {cliente}", 
-                 "<b>PARECER INTERNO PREVENTIVO PARA RESERVA DE MEDIDAS ADMINISTRATIVAS E JUDICIAIS</b><br><br>Considerando o histórico consistente de sucessivas tratativas administrativas realizadas pela empresa vinculadas ao Contrato <b>{cliente}</b>;<br><br>Considerando que a contratada não deu causa à pendência financeira verificada ({valor_total} com {dias_max} dias de atraso), tendo cumprido integralmente suas obrigações contratuais, trabalhistas e fiscais;<br><br>A persistência da inadimplência passa a gerar risco concreto e relevante ao equilíbrio econômico-financeiro do contrato. Fica tecnicamente registrada, em caráter preventivo e resguardatório, a possibilidade de adoção futura das seguintes medidas administrativas e judiciais:<br><ul><li>Intensificação da notificação administrativa formal;</li><li>Formulação de pedido de recomposição do equilíbrio econômico-financeiro;</li><li>Propositura de ação de obrigação de fazer ou cobrança judicial.</li></ul><br>O presente parecer deverá integrar o dossiê interno do contrato, compondo o conjunto probatório consolidado."),
-                 
+                 "<b>PARECER INTERNO PREVENTIVO PARA RESERVA DE MEDIDAS ADMINISTRATIVAS E JUDICIAIS</b><br><br>Considerando o histórico consistente de sucessivas tratativas administrativas realizadas pela empresa vinculadas ao Contrato <b>{cliente}</b>, todas devidamente documentadas por meio de comunicações formais por e-mail, contatos institucionais com o setor financeiro e fiscalização contratual, reuniões administrativas, comunicações operacionais e notificações formais encaminhadas ao contratante;<br><br>Considerando que, ao longo de todo o período, a empresa manteve integralmente a execução contratual, preservando o padrão de qualidade técnica, a regularidade operacional, a continuidade dos serviços e a ausência de qualquer interrupção ou descontinuidade;<br><br>Considerando que os colaboradores permaneceram regularmente em atividade, sem paralisação, sem redução de postos de trabalho e sem qualquer comprometimento do interesse público ou da rotina institucional do órgão contratante;<br><br>Considerando que a contratada não deu causa à pendência financeira verificada (<b>{valor_total}</b> com <b>{dias_max} dias de atraso</b>) e/ou administrativa, tendo cumprido integralmente suas obrigações contratuais, trabalhistas, previdenciárias, fiscais e operacionais;<br><br>Registra-se que a empresa atuou até o presente momento com máxima boa-fé, responsabilidade institucional, diligência e espírito colaborativo, priorizando, de forma contínua, a solução administrativa amigável da pendência e a preservação da relação contratual.<br><br>Todavia, a persistência da inadimplência, ou da retenção administrativa de faturamento sem solução em prazo razoável, passa a gerar risco concreto e relevante ao equilíbrio econômico-financeiro do contrato, especialmente em razão da natureza continuada dos serviços e da elevada carga de obrigações assumidas pela contratada.<br><br>Diante desse cenário, fica tecnicamente registrada, em caráter preventivo e resguardatório, a possibilidade de adoção futura das seguintes medidas administrativas e judiciais, conforme avaliação estratégica:<br><ul><li>Intensificação da notificação administrativa formal;</li><li>Formulação de pedido de recomposição do equilíbrio econômico-financeiro do contrato;</li><li>Formalização de cobrança administrativa contratual;</li><li>Propositura de ação de obrigação de fazer;</li><li>Eventual formulação de pedido de tutela de urgência;</li><li>Ajuizamento de ação judicial de cobrança;</li><li>Eventual requerimento de medidas constritivas, inclusive bloqueio judicial de valores, quando presentes os requisitos legais.</li></ul><br>Ressalta-se que a presente manifestação não possui caráter confrontativo, mas sim preventivo e técnico, refletindo o dever da empresa de resguardar seus direitos contratuais, garantir a sustentabilidade da execução dos serviços e preservar a regularidade da relação com a Administração Pública.<br><br>O presente parecer deverá integrar o dossiê interno do contrato, compondo o conjunto probatório consolidado, e poderá ser submetido à assinatura do setor jurídico, da diretoria e da presidência, conforme a classificação de risco contratual e a estratégia institucional adotada."),
+
                 ("FAIXA PRETA (+120 DIAS)", "ENCAMINHAMENTO OBRIGATÓRIO AO JURÍDICO - AÇÃO DE COBRANÇA | {cliente}", 
                  "<b>ENCAMINHAMENTO DE DOSSIÊ PARA ADOÇÃO DE MEDIDAS JUDICIAIS</b><br><br><b>Empresa:</b> {ass_emp}<br><b>Contrato:</b> {cliente}<br><b>Valor em aberto:</b> {valor_total}<br><b>Atraso Máximo:</b> {dias_max} dias<br><br>{lista_html}<br><b>1. CONFIGURAÇÃO DA INADIMPLÊNCIA GRAVE</b><br>Configurada a inadimplência grave, reiterada e prolongada, com evidente comprometimento do equilíbrio econômico-financeiro do contrato, encaminhamos a presente demanda ao advogado para adoção das medidas judiciais cabíveis.<br><br><b>2. INSTRUÇÃO DO DOSSIÊ</b><br>O presente encaminhamento encontra-se instruído com dossiê completo e devidamente organizado, formado ao longo de todas as etapas anteriores do fluxo, contemplando: comunicações formais (ANEXO I), notificações administrativas (ANEXO III), comunicações à autoridade superior (ANEXOS II e IV), além do contrato administrativo, notas fiscais emitidas, registros de tratativas e memória detalhada do impacto financeiro.<br><br><b>3. ROBUSTEZ PROBATÓRIA E AÇÃO JUDICIAL</b><br>Nesta fase, o procedimento já se encontra plenamente estruturado sob os aspectos probatório, técnico e jurídico, com demonstração inequívoca da boa-fé da contratada e da responsabilidade da Administração pela mora. Tal robustez documental viabiliza a adoção segura e estratégica das medidas judiciais pertinentes, inclusive a propositura de ação de cobrança, obrigação de fazer e/ou pedido de tutela de urgência, com o objetivo de viabilizar o faturamento e resguardar, de forma efetiva, o equilíbrio econômico-financeiro do contrato."), # <---- ESSA VÍRGULA AQUI FALTAVA!
 
@@ -475,9 +483,8 @@ def obter_contatos_operacao():
 def carregar_dados_reais(forcar=False):
     gestor.historico = gestor.carregar_historico() # Puxa do DB fresquinho (Demora 0.01 segundos!)
     
-    # 🛡️ O ESCUDO DO CACHE: Se já temos as notas na memória, pulamos o Excel pesado!
+    # 🛡️ O ESCUDO DO CACHE
     if len(gestor.todas_as_notas) > 0 and not forcar:
-        # Apenas atualizamos a etiqueta de último envio de cada nota caso o outro usuário tenha mandado e-mail
         for nota in gestor.todas_as_notas:
             dados_hist = gestor.historico.get(str(nota['nota']), "-")
             if isinstance(dados_hist, dict):
@@ -486,27 +493,38 @@ def carregar_dados_reais(forcar=False):
                 nota['usuario_envio'] = dados_hist.get("usuario", "Desconhecido")
         return {"status": "sucesso", "msg": "Carregado do cache rápido"}
 
-    # Se a lista estiver vazia (primeira vez que abre o sistema no dia), ele lê o Excel!
     gestor.todas_as_notas.clear()
     arquivos = [PATH_2025, PATH_2026]
+    
+    # =====================================================================
+    # 🕵️‍♂️ SENSOR DE REDE E PERMISSÕES (NOVIDADE!)
+    # Verifica se os arquivos sequer existem para esse usuário antes de ler!
+    # =====================================================================
+    arquivos_encontrados = [c for c in arquivos if os.path.exists(c)]
+    
+    if not arquivos_encontrados:
+        return {
+            "status": "erro_rede", 
+            "msg": "As planilhas do Relatório de Serviços não foram encontradas.\n\nVerifique se o seu disco de rede está mapeado na letra S: e se você possui permissão de leitura na pasta do Financeiro."
+        }
+
     hoje = datetime.now()
     lista_final = []
 
-    for caminho in arquivos:
-        if os.path.exists(caminho):
-            try:
-                # 🚀 USANDO O CARREGAMENTO NINJA LOCAL AQUI!
-                df = ler_excel_ninja(caminho, usecols=[1, 3, 4, 5, 8, 11, 14, 15], engine='openpyxl')
+    for caminho in arquivos_encontrados:
+        try:
+            # 🚀 USANDO O CARREGAMENTO NINJA LOCAL AQUI!
+            df = ler_excel_ninja(caminho, usecols=[1, 3, 4, 5, 8, 11, 14, 15], engine='openpyxl')
+            
+            if df.empty: continue
                 
-                if df.empty: continue
-                    
-                df.columns = ['empresa', 'data', 'nota', 'competencia', 'cliente', 'situacao', 'valor', 'pagamento']
-                df['linha_excel'] = df.index + 2
-                df['arquivo_origem'] = "2025" if "2025" in caminho else "2026"
-                df = df[df['situacao'].str.upper() == 'NORMAL']
-                df = df[df['pagamento'].isna() | (df['pagamento'].astype(str).str.strip() == '-')]
-                lista_final.append(df)
-            except: pass
+            df.columns = ['empresa', 'data', 'nota', 'competencia', 'cliente', 'situacao', 'valor', 'pagamento']
+            df['linha_excel'] = df.index + 2
+            df['arquivo_origem'] = "2025" if "2025" in caminho else "2026"
+            df = df[df['situacao'].str.upper() == 'NORMAL']
+            df = df[df['pagamento'].isna() | (df['pagamento'].astype(str).str.strip() == '-')]
+            lista_final.append(df)
+        except: pass
 
     if not lista_final: return {"status": "sucesso", "dados": [], "total_atraso": "R$ 0,00", "total_geral": "R$ 0,00"}
 
@@ -524,8 +542,21 @@ def carregar_dados_reais(forcar=False):
                 try: nota_str = str(int(float(row['nota']))).strip()
                 except: nota_str = str(row['nota']).strip()
                 
-                comp_val = str(row['competencia']).strip()
-                if comp_val.lower() == 'nan' or pd.isna(row['competencia']): comp_val = ""
+                # 📅 TRATAMENTO DA COMPETÊNCIA (Mágica para virar 'jan/26')
+                comp_bruta = row['competencia']
+                comp_val = ""
+                if not pd.isna(comp_bruta) and str(comp_bruta).strip().lower() != 'nan':
+                    # Se for uma data do Excel ou string de data, a gente formata
+                    if isinstance(comp_bruta, (datetime, pd.Timestamp)) or "00:00:00" in str(comp_bruta):
+                        try:
+                            dt_comp = pd.to_datetime(comp_bruta)
+                            meses = ["", "jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+                            comp_val = f"{meses[dt_comp.month]}/{str(dt_comp.year)[-2:]}"
+                        except:
+                            comp_val = str(comp_bruta).strip()
+                    else:
+                        # Se for só um texto normal (ex: "Taxa Extra"), deixa quieto
+                        comp_val = str(comp_bruta).strip()
                 
                 dados_hist = gestor.historico.get(nota_str, "-")
                 if isinstance(dados_hist, dict):
@@ -682,57 +713,8 @@ def enviar_email_backend(notas_selecionadas, conta_selecionada, escolha_90_dias)
     valor_total = sum(n['valor_num'] for n in notas_selecionadas)
     
     # =================================================================
-    # 🕵️‍♂️ CÉREBRO DE CÓPIA (CC) - BUSCA NO BANCO LOCAL (vinculos_operacao)
+    # 1. PRIMEIRO: Descobrimos qual é a maior faixa (Severidade)
     # =================================================================
-    lista_cc = []
-    
-    # 1. REGRA DE OURO: O Daison está em todas!
-    lista_cc.append("gerenciaoperacional@haggltda.com.br") 
-
-    # 2. Dicionário de E-mails dos Supervisores (Para traduzir Nome -> E-mail)
-    emails_supervisores = {
-        "AFRANIO": "adm5@haggltda.com.br",
-        "CASSIO": "cassioduarte.operacional@haggltda.com.br",
-        "ISMAEL": "adm9@haggltda.com.br",
-        "GUSTAVO B": "gustavobarcelos.operacional@haggltda.com.br",
-        "GUSTAVO": "gustavobarcelos.operacional@haggltda.com.br"
-    }
-
-    try:
-        # Pega a primeira palavra do cliente para buscar no banco (Ex: BENTO)
-        termo_busca = str(cliente_ref).split('-')[0].strip()
-        
-        c = gestor.conn.cursor()
-        c.execute("""SELECT analista_email, supervisor_nome 
-                     FROM vinculos_operacao 
-                     WHERE contrato_sistema LIKE ?""", (f"%{termo_busca}%",))
-        resultado = c.fetchone()
-        
-        if resultado:
-            email_analista = resultado[0]
-            nome_supervisor = str(resultado[1]).upper()
-            
-            # Adiciona o Analista se o e-mail for válido
-            if email_analista and "@" in str(email_analista):
-                lista_cc.append(email_analista)
-                print(f"🎯 Analista {email_analista} adicionado ao CC.")
-
-            # Busca o e-mail do supervisor no nosso dicionário
-            for chave_sup in emails_supervisores.keys():
-                if chave_sup in nome_supervisor:
-                    lista_cc.append(emails_supervisores[chave_sup])
-                    print(f"👮 Supervisor {nome_supervisor} adicionado ao CC.")
-                    break
-        else:
-            print(f"⚠️ Vínculo não encontrado para {termo_busca}. Seguindo apenas com CC padrão.")
-
-    except Exception as e:
-        print(f"❌ Erro ao buscar vínculos no DB Local: {e}")
-
-    # Remove duplicados e junta com ponto e vírgula para o Outlook
-    cc_final = "; ".join(list(set(lista_cc)))
-    # =================================================================
-
     tipo_cobranca_final = ""
     maior_sev = -1 
     
@@ -761,10 +743,66 @@ def enviar_email_backend(notas_selecionadas, conta_selecionada, escolha_90_dias)
             maior_sev = niv
             tipo_cobranca_final = parecer_oficial
 
+    # =================================================================
+    # 🕵️‍♂️ 2. CÉREBRO DE CÓPIA (CC) - AGORA COM REGRA DE EXCEÇÃO
+    # =================================================================
+    lista_cc = []
+    
+    # REGRA NOVA: Se for apenas "AVISO AMIGÁVEL", não coloca a operação em cópia
+    if "AVISO AMIGÁVEL" not in tipo_cobranca_final:
+        # REGRA DE OURO: O Daison está em todas!
+        lista_cc.append("gerenciaoperacional@haggltda.com.br") 
+
+        # Dicionário de E-mails dos Supervisores
+        emails_supervisores = {
+            "AFRANIO": "adm5@haggltda.com.br",
+            "CASSIO": "cassioduarte.operacional@haggltda.com.br",
+            "ISMAEL": "adm9@haggltda.com.br",
+            "GUSTAVO B": "gustavobarcelos.operacional@haggltda.com.br",
+            "GUSTAVO": "gustavobarcelos.operacional@haggltda.com.br"
+        }
+
+        try:
+            # Pega a primeira palavra do cliente para buscar no banco
+            termo_busca = str(cliente_ref).split('-')[0].strip()
+            
+            c = gestor.conn.cursor()
+            c.execute("""SELECT analista_email, supervisor_nome 
+                         FROM vinculos_operacao 
+                         WHERE contrato_sistema LIKE ?""", (f"%{termo_busca}%",))
+            resultado = c.fetchone()
+            
+            if resultado:
+                email_analista = resultado[0]
+                nome_supervisor = str(resultado[1]).upper()
+                
+                # Adiciona o Analista se o e-mail for válido
+                if email_analista and "@" in str(email_analista):
+                    lista_cc.append(email_analista)
+                    print(f"🎯 Analista {email_analista} adicionado ao CC.")
+
+                # Busca o e-mail do supervisor no dicionário
+                for chave_sup in emails_supervisores.keys():
+                    if chave_sup in nome_supervisor:
+                        lista_cc.append(emails_supervisores[chave_sup])
+                        print(f"👮 Supervisor {nome_supervisor} adicionado ao CC.")
+                        break
+            else:
+                print(f"⚠️ Vínculo não encontrado para {termo_busca}. Seguindo apenas com CC padrão.")
+
+        except Exception as e:
+            print(f"❌ Erro ao buscar vínculos no DB Local: {e}")
+
+    # Remove duplicados e junta com ponto e vírgula para o Outlook
+    cc_final = "; ".join(list(set(lista_cc)))
+    
+    # =================================================================
+    # 3. CONSTRUÇÃO DO CORPO E VARIÁVEIS HTML
+    # =================================================================
     qtd_notas = len(notas_selecionadas)
     lista_html = "<ul>"
     for n in notas_selecionadas:
-        comp = f" - Ref: {n['competencia']}" if n['competencia'] else ""
+        comp = f" - Comp: {n['competencia']}" if n['competencia'] else ""
         lista_html += f"<li>Nota <b>{n['nota']}</b> (Emissão: {n['emissao']}{comp}) - {n['valor_str']}</li>"
     lista_html += "</ul>"
 
@@ -773,7 +811,6 @@ def enviar_email_backend(notas_selecionadas, conta_selecionada, escolha_90_dias)
     rz_map = {"SN": "SN Serviços de Limpeza e Zeladoria Predial Ltda", "HAGG": "Nascimento Serviços de Limpeza Ltda", "NH": "NH Prestação de Serviços Ltda", "CANAÃ": "INSTITUTO DE ENSINO CANAA", "CANAA": "INSTITUTO DE ENSINO CANAA"}
     ass_emp = rz_map.get(empresa_ref, f"{empresa_ref} - GRUPO NASCIMENTO")
 
-    # ... (código anterior da sua função, incluindo a formatação das Variáveis Mágicas) ...
     t_nota = "à Nota Fiscal" if qtd_notas == 1 else "às Notas Fiscais"
     t_da_nota = "da Nota Fiscal" if qtd_notas == 1 else "das Notas Fiscais"
     t_num = f" nº {notas_selecionadas[0]['nota']}" if qtd_notas == 1 else " detalhadas abaixo"
@@ -785,7 +822,6 @@ def enviar_email_backend(notas_selecionadas, conta_selecionada, escolha_90_dias)
 
     # =================================================================
     # ⚙️ MÁGICA DOS TEMPLATES DINÂMICOS NO BANCO DE DADOS (SELETOR)
-    # AQUI ENTRA A MODIFICAÇÃO QUE VOCÊ PERGUNTOU! 👇
     # =================================================================
     if "FAIXA LARANJA" in tipo_cobranca_final:
         if str(escolha_90_dias) == "1":
@@ -826,10 +862,18 @@ def enviar_email_backend(notas_selecionadas, conta_selecionada, escolha_90_dias)
     for tag, valor_real in substituicoes.items():
         ass = ass.replace(tag, valor_real)
         corpo = corpo.replace(tag, valor_real)
-    
-    # ... (o resto da função com a geração do PDF e Outlook continua igualzinho ao que você mandou!) ...
+        
+    # =================================================================
+    # ⚙️ MÁGICA FINAL: INCLUSÃO DAS NFs NO ASSUNTO
+    # =================================================================
+    lista_nfs_str = ", ".join([n['nota'] for n in notas_selecionadas])
+    ass = f"{ass} (NFs: {lista_nfs_str})"
 
+    # =================================================================
+    # GERAÇÃO DO E-MAIL NO OUTLOOK + RADAR INTELIGENTE
+    # =================================================================
     try:
+        import random
         pythoncom.CoInitialize()
         outlook = win32.Dispatch('outlook.application')
         mail = outlook.CreateItem(0)
@@ -848,61 +892,135 @@ def enviar_email_backend(notas_selecionadas, conta_selecionada, escolha_90_dias)
             try: mail._oleobj_.Invoke(*(64209, 0, 8, 0, c_enc))
             except: pass
 
-        mail.Subject = ass
+        # 🏷️ GERA UMA TAG ÚNICA PARA O RADAR RASTREAR!
+        ref_id = f"[REF-{random.randint(10000, 99999)}]"
+        
+        # Injeta a TAG e o Assunto Turbinado
+        mail.Subject = f"{ass} {ref_id}"
         
         if cc_final:
             mail.CC = cc_final
-            print(f"📧 Outlook configurado com CC: {cc_final}")
 
         mail.Display()
         ass_out = mail.HTMLBody 
         mail.HTMLBody = f"<div style='font-family:Calibri; font-size:11pt;'>{corpo}</div>{ass_out}" 
         
-        # ======================================================================
-        # 🕵️‍♂️ CAPTURA O E-MAIL REAL PARA A EVIDÊNCIA (FIM DO "CONTA PADRÃO")
-        # ======================================================================
         try:
-            if c_enc:
-                email_real_remetente = c_enc.SmtpAddress
-            else:
-                email_real_remetente = outlook.Session.Accounts.Item(1).SmtpAddress
+            if c_enc: email_real_remetente = c_enc.SmtpAddress
+            else: email_real_remetente = outlook.Session.Accounts.Item(1).SmtpAddress
         except:
             email_real_remetente = conta_selecionada 
-            
-        print(f"📄 Remetente real identificado: {email_real_remetente}")
 
-        c_ev = corpo + "<br><br>Atenciosamente,"
-        nms = ", ".join([n['nota'] for n in notas_selecionadas])
-        cli_l = cliente_ref.replace("/", "-").replace("\\", "-")
-        
-        # 🚀 CORREÇÃO DO BUG DE SOBREPOSIÇÃO: Adicionando Hora/Minuto, Tipo e Usuário
-        dt_env = datetime.now().strftime("%d.%m.%Y %Hh%M") # Ex: 27.04.2026 10h18
-        usuario_up = str(gestor.usuario_logado).upper()
-        
-        # Cria um nome riquíssimo que nunca vai se repetir!
-        nm_arq = f"{cli_l} - {dt_env} - NFs {nms} - {tipo_cobranca_final} ({usuario_up})"[:200]
-        
-        # Limpa qualquer caractere que o Windows proíba em nomes de arquivos
-        nm_arq = nm_arq.replace(":", "h").replace("/", "-").replace("\\", "-")
+        # 🛑 O NOVO CÉREBRO: Guarda só o essencial para o Radar!
+        gestor.email_em_transito = {
+            "notas": notas_selecionadas,
+            "ref_id": ref_id,
+            "remetente": email_real_remetente,
+            "cliente": cliente_ref,
+            "empresa": empresa_ref,
+            "tipo_cobranca": tipo_cobranca_final
+        }
 
-        # Chama a geração do PDF
-        cam = gestor.gerar_evidencia_pdf(ass, c_ev, email_real_remetente, cliente_ref, nm_arq, empresa_ref)
-        
-        if cam and cam != "ERRO_ABERTO":
-            for n in notas_selecionadas: 
-                gestor.salvar_historico_envio(n['nota'], cam)
-                try:
-                    gestor.conn.execute("INSERT INTO log_atividades (cliente, nota_fiscal, data_hora, usuario, acao) VALUES (?, ?, ?, ?, ?)",
-                                        (cliente_ref, n['nota'], datetime.now().strftime("%d/%m/%Y %H:%M:%S"), gestor.usuario_logado, f"E-mail: {tipo_cobranca_final}"))
-                except: pass
-            gestor.conn.commit()
-            gestor.historico = gestor.carregar_historico()
-            carregar_dados_reais()  
-            
-        return {"status": "sucesso"}
+        # Avisamos o Javascript para ligar a Antena do Radar!
+        return {"status": "pendente_radar"}
         
     except Exception as e: 
         return {"status": "erro", "msg": str(e)}
+    
+# ======================================================================
+# 🚀 NOVAS FUNÇÕES PARA RECEBER A RESPOSTA DA TELA
+# ======================================================================
+@eel.expose
+def radar_buscar_email_enviado():
+    try:
+        if getattr(gestor, 'email_em_transito', {}) == {}:
+            return {"status": "cancelado"}
+
+        dados = gestor.email_em_transito
+        ref_id = dados['ref_id']
+
+        pythoncom.CoInitialize()
+        outlook = win32.Dispatch('outlook.application')
+        namespace = outlook.GetNamespace("MAPI")
+
+        conta_selecionada = dados['remetente']
+        pasta_enviados = None
+
+        # 1. Encontra a pasta "Itens Enviados" da conta da Carol
+        for acc in namespace.Accounts:
+            if acc.SmtpAddress == conta_selecionada or acc.DisplayName == conta_selecionada:
+                try:
+                    pasta_enviados = acc.DeliveryStore.GetDefaultFolder(5)
+                    break
+                except: pass
+
+        if not pasta_enviados:
+            pasta_enviados = namespace.GetDefaultFolder(5)
+
+        # 2. Pega os e-mails e organiza do mais novo pro mais velho
+        itens = pasta_enviados.Items
+        itens.Sort("[SentOn]", True) 
+
+        encontrado = None
+        # Procura apenas nos últimos 30 emails para não travar o PC
+        max_check = min(30, itens.Count + 1)
+        for i in range(1, max_check):
+            item = itens.Item(i)
+            try:
+                # 📡 SE ACHOU A TAG, É O NOSSO E-MAIL!
+                if item.Subject and ref_id in item.Subject:
+                    encontrado = item
+                    break
+            except: continue
+
+        if encontrado:
+            # ========================================================
+            # 🎯 ACHOU! SALVANDO A CÓPIA VERDADEIRA DO OUTLOOK (.MSG)
+            # ========================================================
+            nms = ", ".join([n['nota'] for n in dados['notas']])
+            cli_l = dados['cliente'].replace("/", "-").replace("\\", "-")
+            dt_env = datetime.now().strftime("%d.%m.%Y %Hh%M")
+            usuario_up = str(getattr(gestor, 'usuario_logado', 'SISTEMA')).upper()
+
+            # MÁGICA FINAL: Troca a extensão .pdf por .msg
+            nm_arq = f"{cli_l} - {dt_env} - NFs {nms} - {dados['tipo_cobranca']} ({usuario_up})"[:200]
+            nm_arq = nm_arq.replace(":", "h").replace("/", "-").replace("\\", "-") + ".msg"
+
+            pasta_destino = gestor.encontrar_ou_criar_pasta_cliente(dados['cliente'], dados['empresa'])
+            caminho_final = os.path.abspath(os.path.join(pasta_destino, nm_arq))
+
+            # Salva o formato OFICIAL da Microsoft (3 = olMSG)
+            encontrado.SaveAs(caminho_final, 3)
+
+            # Apaga a TAG do e-mail da pessoa para ficar bonitinho
+            try:
+                encontrado.Subject = encontrado.Subject.replace(f" {ref_id}", "")
+                encontrado.Save()
+            except: pass
+
+            for n in dados['notas']:
+                gestor.salvar_historico_envio(n['nota'], caminho_final)
+                try:
+                    gestor.conn.execute("INSERT INTO log_atividades (cliente, nota_fiscal, data_hora, usuario, acao, anexo) VALUES (?, ?, ?, ?, ?, ?)",
+                                        (dados['cliente'], n['nota'], datetime.now().strftime("%d/%m/%Y %H:%M:%S"), gestor.usuario_logado, f"E-mail: {dados['tipo_cobranca']}", caminho_final))
+                except: pass
+                
+            gestor.conn.commit()
+            gestor.historico = gestor.carregar_historico()
+            gestor.email_em_transito = {} 
+            
+            return {"status": "encontrado"}
+
+        # Se não achou ainda, diz pro JS continuar esperando
+        return {"status": "buscando"} 
+
+    except Exception as e:
+        return {"status": "buscando"} # Ignora falhas da Microsoft e tenta de novo
+     
+@eel.expose
+def cancelar_gravacao_evidencia():
+    gestor.email_em_transito = {} # O usuário cancelou, apenas apagamos a memória fantasma
+    return {"status": "sucesso"}
 
 @eel.expose
 def substituir_evidencia_python(nota_fiscal, cliente, empresa):
@@ -1026,7 +1144,7 @@ def obter_perfil_usuario():
     setor = gestor.funcao_logada
     
     # LIBERAÇÃO: Se for Ruan OU se o setor for FINANCEIRO ou CONTROLADORIA
-    permitidos = ["FINANCEIRO", "CONTROLADORIA"]
+    permitidos = ["FINANCEIRO", "CONTROLADORIA", "CEO", "DIRETOR", "DIRETORA"]
     is_admin = True if (nome.lower() == 'ruan' or setor in permitidos) else False
     
     return {"nome": nome, "is_admin": is_admin}
@@ -1667,6 +1785,21 @@ def anexar_doc_timeline(id_log, cliente_nome, nota_fiscal):
     except Exception as e:
         print(f"❌ Erro ao anexar documento na timeline: {e}")
         return {"status": "erro", "msg": str(e)}  
+
+@eel.expose
+def listar_clientes_com_historico():
+    try:
+        c = gestor.conn.cursor()
+        # O DISTINCT garante que não vai repetir o nome do cliente, e o ORDER BY põe em ordem alfabética!
+        c.execute("SELECT DISTINCT cliente FROM log_atividades WHERE cliente IS NOT NULL AND cliente != '' ORDER BY cliente ASC")
+        res = c.fetchall()
+        
+        # Transforma o resultado do banco numa listinha simples de nomes
+        clientes = [r[0] for r in res]
+        return clientes
+    except Exception as e:
+        print(f"❌ Erro ao listar clientes do histórico: {e}")
+        return []
 
 eel.init('web')
 eel.start('login.html', size=(1400, 850), port=0)

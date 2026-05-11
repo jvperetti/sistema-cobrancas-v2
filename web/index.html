@@ -432,17 +432,21 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js?v=2"></script>
 
     <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="sidebarMenu" style="width: 280px; border-right: 1px solid #00E5FF;">
         <div class="offcanvas-header border-bottom border-secondary">
             <h5 class="offcanvas-title fw-bold text-white">Navegação</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
         </div>
+        
+        <!-- O gap-3 já faz o espaçamento perfeito entre todos os botões -->
         <div class="offcanvas-body d-flex flex-column gap-3">
             <button class="btn btn-light fw-bold text-dark text-start nav-main-link" id="nav-dash" onclick="navegarPara('dashboard')">📊 Dashboard Visual</button>
             
             <button class="btn btn-outline-light fw-bold text-white text-start nav-main-link" id="nav-cob" onclick="navegarPara('cobrancas')">✉️ Painel de Cobranças</button>
+            
+            <button class="btn btn-outline-info fw-bold text-white text-start" onclick="abrirModalBuscaHistorico()">🔍 Consultar Histórico</button>
             
             <div id="area-admin" class="d-flex flex-column gap-3 w-100" style="display: none !important;">
                 <button class="btn btn-outline-warning fw-bold text-white text-start nav-main-link w-100" id="nav-admin" onclick="navegarPara('admin')">⚙️ Gestão de Usuários</button>
@@ -455,5 +459,31 @@
             <button class="btn btn-outline-danger fw-bold text-start text-white w-100" onclick="fazerLogout()">🚪 Sair do Sistema</button>
         </div>
     </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL DE CONSULTA GLOBAL DE HISTÓRICO      -->
+    <!-- ========================================== -->
+    <div class="modal fade" id="modalBuscaHistorico" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-light border-info">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold text-info">🔍 Central de Dossiês e Históricos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <p class="text-white-50 mb-4">Selecione um contrato abaixo para consultar todas as ações, anexos e e-mails disparados, mesmo de notas já liquidadas.</p>
+                    
+                    <select class="form-select bg-dark text-light border-secondary mb-4" id="combo-busca-historico">
+                        <!-- O Javascript vai preencher os clientes aqui -->
+                    </select>
+
+                    <button class="btn btn-info fw-bold w-100 py-2" onclick="irParaTimelineBusca()">
+                        📜 ABRIR LINHA DO TEMPO
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
